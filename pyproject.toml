@@ -1,0 +1,35 @@
+[project]
+name = "discrete-diffusion-distributions"
+version = "0.1.0"
+description = "Discrete Diffusion Distribution Experiments"
+readme = "README.md"
+requires-python = ">=3.10, <3.11"
+license = {file = "LICENSE.txt"}
+authors = [
+  {email = "xuchengo@andrew.cmu.edu", name = "Xuchen Gong"},
+  {email = "tianwenf@andrew.cmu.edu", name = "Tianwen Fu"}
+]
+dependencies = [
+  "jax[cuda11_pip] == 0.4.8",
+  "jaxlib @ https://storage.googleapis.com/jax-releases/cuda11/jaxlib-0.4.7+cuda11.cudnn86-cp310-cp310-manylinux2014_x86_64.whl",
+  "chex",
+  "flax",
+  "numpy",
+  "scipy",
+  "matplotlib",
+  "tensorflow", # for tensorboard
+]
+
+[build-system]
+requires = [
+  "setuptools >= 62.3.2",
+  "setuptools-scm",
+  "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.isort]
+profile = "black"
