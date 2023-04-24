@@ -1,5 +1,6 @@
 from typing import Dict
 
+from .absorbing_center import *
 from .base import Config
 from .defaults import *
 from .doubly_stochastic_beta_schedules import *
@@ -15,6 +16,8 @@ NAMED_CONFIGS = {
     ),
     "OVER_PEAKINESS": over_peakiness,
     "DOUBLY_STOCHASTIC_BETAS": doubly_stochastic_beta_schedules,
+    "ABSORBING_CENTER_M1": absorbing_center_M1,
+    "ABSORBING_CENTER_M5": absorbing_center_M5,
 }
 
 
