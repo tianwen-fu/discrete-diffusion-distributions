@@ -24,15 +24,18 @@ def plot_samples(
     exp_name: str,
     draw_pmf: bool = False,
 ):
-    fig = plt.figure(figsize=(3, 3), dpi=700)
+    fig = plt.figure(figsize=(2, 2), dpi=700)
     plt.plot(
         np.arange(config.num_classes),
         samples_to_frequency(dataset.data, config.num_classes),
         color="orange",
         label="GT",
-        alpha=0.7,
+        # alpha=0.7,
+        linewidth=2,
     )
     plt.ylim([-0.1, 1.1])
+    plt.xlabel("$x$")
+    plt.ylabel("Frequency")
     plt.savefig(
         os.path.join(save_folder, f"{exp_name}_dataset.pdf"),
         bbox_inches="tight",
@@ -43,8 +46,9 @@ def plot_samples(
         samples_to_frequency(samples, config.num_classes),
         color="blue",
         label=r"$p_\theta$",
-        alpha=0.5,
+        alpha=0.7,
         linestyle="--",
+        linewidth=2,
     )
     if draw_pmf:
         plt.plot(
@@ -54,8 +58,6 @@ def plot_samples(
             label="PMF",
             alpha=0.7,
         )
-    plt.xlabel("$x$")
-    plt.ylabel("Frequency")
     plt.legend()
     plt.savefig(
         os.path.join(save_folder, f"{exp_name}_samples.pdf"),
