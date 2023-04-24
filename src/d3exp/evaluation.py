@@ -21,6 +21,7 @@ def plot_samples(
     samples,
     dataset: CauchyDataset,
     save_folder: str,
+    exp_name: str,
     draw_pmf: bool = False,
 ):
     fig = plt.figure(figsize=(3, 3), dpi=700)
@@ -33,7 +34,9 @@ def plot_samples(
     )
     plt.ylim([-0.1, 1.1])
     plt.savefig(
-        os.path.join(save_folder, "dataset.pdf"), bbox_inches="tight", pad_inches=0
+        os.path.join(save_folder, f"{exp_name}_dataset.pdf"),
+        bbox_inches="tight",
+        pad_inches=0,
     )
     plt.plot(
         np.arange(config.num_classes),
@@ -55,7 +58,9 @@ def plot_samples(
     plt.ylabel("Frequency")
     plt.legend()
     plt.savefig(
-        os.path.join(save_folder, "samples.pdf"), bbox_inches="tight", pad_inches=0
+        os.path.join(save_folder, f"{exp_name}_samples.pdf"),
+        bbox_inches="tight",
+        pad_inches=0,
     )
     plt.close(fig)
 
@@ -64,4 +69,4 @@ def empirical_kl(config: Config, data_p, data_q):
     p = samples_to_frequency(data_p.reshape(-1), config.num_classes)
     q = samples_to_frequency(data_q.reshape(-1), config.num_classes)
     assert p.shape == q.shape
-    return (p * np.log2(p + config.eps) - np.log2(q + config.eps)).sum()
+    return (p * (np.log2(p + config.eps) - np.log2(q + config.eps))).sum()

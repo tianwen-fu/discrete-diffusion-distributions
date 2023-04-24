@@ -69,7 +69,13 @@ def main():
             samples = np.asarray(
                 trainer.generate_samples(state, sample_rng, config.dataset_size)
             )
-            plot_samples(config, samples, dataset, config.work_dir)
+            plot_samples(
+                config,
+                samples,
+                dataset,
+                os.path.join(work_dir, configset_name),
+                config_name,
+            )
             np.savez(
                 os.path.join(config.work_dir, "samples.npz"),
                 samples=samples.reshape(-1),
