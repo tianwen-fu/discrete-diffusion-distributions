@@ -8,6 +8,7 @@ __all__ = (
     "gaussian_default",
     "gaussian_cosine_default",
     "random_double_stochastic_default",
+    "defaults_dict",  # for other configs to import
 )
 
 uniform_default = Config(
@@ -15,7 +16,7 @@ uniform_default = Config(
     batch_size=512,
     data_shape=(),
     seed=0,
-    epochs=5,
+    epochs=10,
     log_every=20,
     grad_clip=1.0,
     warmup_steps=10,
@@ -75,4 +76,11 @@ random_double_stochastic_default.update(
         beta_schedule_type="linear",
         beta_schedule_kwargs=dict(beta_start=1.0, beta_end=5.5),
     )
+)
+
+defaults_dict = dict(
+    uniform=uniform_default,
+    gaussian=gaussian_cosine_default,
+    absorbing=absorbing_default,
+    double_stochastic=random_double_stochastic_default,
 )

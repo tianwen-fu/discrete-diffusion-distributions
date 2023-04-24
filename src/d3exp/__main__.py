@@ -1,13 +1,16 @@
 import logging
 import os
+import pprint
 from argparse import ArgumentParser
 from copy import deepcopy
 from datetime import datetime
 
 import jax.random as jrnd
+import numpy as np
 
 from d3exp.config import get_configs
-from d3exp.data import CauchyDataset, MemoryDataLoader, plot_samples
+from d3exp.data import CauchyDataset, MemoryDataLoader
+from d3exp.evaluation import empirical_kl, plot_samples
 from d3exp.trainer import Trainer
 
 
@@ -36,6 +39,8 @@ def main():
     logging.basicConfig(level=logging.INFO, filename=os.path.join(work_dir, "log.txt"))
     logging.getLogger().addHandler(logging.StreamHandler())
 
+    kl_metrics_sd = {}
+    kl_metrics_ds = {}
     for configset_name in args.configs:
         config_set = get_configs(configset_name)
         for config_name, config in config_set.items():
@@ -61,8 +66,28 @@ def main():
             trainer = Trainer(config, dataloader, logging.getLogger("trainer"))
             state = trainer.train()
             rng, sample_rng = jrnd.split(rng)
-            samples = trainer.generate_samples(state, sample_rng, config.dataset_size)
+            samples = np.asarray(
+                trainer.generate_samples(state, sample_rng, config.dataset_size)
+            )
             plot_samples(config, samples, dataset, config.work_dir)
+            np.savez(
+                os.path.join(config.work_dir, "samples.npz"),
+                samples=samples.reshape(-1),
+                dataset=dataset.data.reshape(-1),
+            )
+            kl_metrics_sd[configset_name + "/" + config_name] = empirical_kl(
+                config, samples, dataset.data
+            )
+            kl_metrics_ds[configset_name + "/" + config_name] = empirical_kl(
+                config, dataset.data, samples
+            )
+
+    logging.info(
+        f"KL divergences D(samples || dataset): {pprint.pformat(kl_metrics_sd)}"
+    )
+    logging.info(
+        f"KL divergences D(dataset || samples): {pprint.pformat(kl_metrics_ds)}"
+    )
 
 
 if __name__ == "__main__":
