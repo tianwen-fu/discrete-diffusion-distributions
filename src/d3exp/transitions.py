@@ -1,5 +1,6 @@
 import abc
 
+import chex
 import jax
 import jax.numpy as jnp
 import jax.random as jrnd
@@ -174,6 +175,7 @@ class RandomDoublyStochasticTransition(TransitionWithUniformStationary):
         self.num_classes = num_classes
         self.rng = rng
         self.beta_max = beta_max
+
         transition_matrix = self.generate_doubly_stochastic(num_classes, rng)
         transition_matrices = [
             jnp.linalg.matrix_power(
@@ -181,8 +183,10 @@ class RandomDoublyStochasticTransition(TransitionWithUniformStationary):
             )  # because jax somehow does not support batched matrix power
             for beta in range(beta_max)
         ]
+        transition_matrices[0] = jnp.full_like(
+            transition_matrices[0], jnp.nan
+        )  # to make sure we don't use this matrix
         transition_matrices = jnp.stack(transition_matrices, axis=0)
-        transition_matrices[0, ...] = jnp.nan  # to make sure we don't use this matrix
         self.transition_matrices = transition_matrices
 
     def _get_transition_matrix(self, t, beta_t):
@@ -190,11 +194,17 @@ class RandomDoublyStochasticTransition(TransitionWithUniformStationary):
         # as an example with seed = 0, beta_max = 8 would become a uni
 
         beta_casted = jnp.floor(beta_t).astype(jnp.int32)
-        return jnp.where(
+        chex.assert_tree_all_finite(jnp.where(beta_casted > 0, beta_casted, jnp.nan))
+        chex.assert_tree_all_finite(
+            jnp.where(beta_casted < self.beta_max, beta_casted, jnp.nan)
+        )
+        out = jnp.where(
             (beta_casted > 0) & (beta_casted < self.beta_max),
             self.transition_matrices[beta_casted, ...],
             jnp.nan,
         )
+        chex.assert_tree_all_finite(out)
+        return out
 
 
 TRANSITION_CLASSES = dict(
@@ -205,7 +215,7 @@ TRANSITION_CLASSES = dict(
 )
 
 
-def get_transition(config: Config):
+def get_transition(config: Config, **kwargs):
     return TRANSITION_CLASSES[config.transition_type](
-        num_classes=config.num_classes, **config.transition_kwargs
+        num_classes=config.num_classes, **kwargs, **config.transition_kwargs
     )

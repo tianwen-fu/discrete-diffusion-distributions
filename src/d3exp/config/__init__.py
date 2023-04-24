@@ -1,10 +1,18 @@
+from typing import Dict
+
 from .base import Config
-from .uniform import *
+from .defaults import *
 
 NAMED_CONFIGS = {
-    "UNIFORM_DEFAULT": uniform_default,
+    "DEFAULTS": dict(
+        uniform=uniform_default,
+        gaussian=gaussian_default,
+        gaussian_cosine=gaussian_cosine_default,
+        absorbing=absorbing_default,
+        random_double_stochastic=random_double_stochastic_default,
+    ),
 }
 
 
-def get_config(name: str) -> Config:
+def get_configs(name: str) -> Dict[str, Config]:
     return NAMED_CONFIGS[name]

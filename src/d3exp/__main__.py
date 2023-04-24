@@ -1,11 +1,12 @@
 import logging
 import os
 from argparse import ArgumentParser
+from copy import deepcopy
 from datetime import datetime
 
 import jax.random as jrnd
 
-from d3exp.config import get_config
+from d3exp.config import get_configs
 from d3exp.data import CauchyDataset, MemoryDataLoader, plot_samples
 from d3exp.trainer import Trainer
 
@@ -35,33 +36,33 @@ def main():
     logging.basicConfig(level=logging.INFO, filename=os.path.join(work_dir, "log.txt"))
     logging.getLogger().addHandler(logging.StreamHandler())
 
-    for config_name in args.configs:
-        logging.info(f"Running config {config_name}")
-        config = get_config(config_name)
-        config.seed = args.seed
-        config.work_dir = os.path.join(work_dir, config_name)
-        os.makedirs(config.work_dir, exist_ok=True)
+    for configset_name in args.configs:
+        config_set = get_configs(configset_name)
+        for config_name, config in config_set.items():
+            logging.info(f"Running config {configset_name}/{config_name}")
+            config = deepcopy(config)
+            config.seed = args.seed
+            config.work_dir = os.path.join(work_dir, configset_name, config_name)
+            os.makedirs(config.work_dir, exist_ok=True)
 
-        rng, data_rng = jrnd.split(rng)
-        dataset = CauchyDataset(
-            n_mode=config.n_modes,
-            tau=config.data_tau,
-            n_classes=config.num_classes,
-            size=config.dataset_size,
-        )
-        dataloader = MemoryDataLoader(
-            dataset.data.reshape(-1),
-            batch_size=config.batch_size,
-            key=data_rng,
-            shuffle=True,
-        )
-        trainer = Trainer(config, dataloader, logging.getLogger("trainer"))
-        state = trainer.train()
-        rng, sample_rng = jrnd.split(rng)
-        samples = trainer.generate_samples(state, sample_rng, config.dataset_size)
-        plot_samples(
-            config, samples, dataset, os.path.join(config.work_dir, "samples.pdf")
-        )
+            rng, data_rng = jrnd.split(rng)
+            dataset = CauchyDataset(
+                n_mode=config.n_modes,
+                tau=config.data_tau,
+                n_classes=config.num_classes,
+                size=config.dataset_size,
+            )
+            dataloader = MemoryDataLoader(
+                dataset.data.reshape(-1),
+                batch_size=config.batch_size,
+                key=data_rng,
+                shuffle=True,
+            )
+            trainer = Trainer(config, dataloader, logging.getLogger("trainer"))
+            state = trainer.train()
+            rng, sample_rng = jrnd.split(rng)
+            samples = trainer.generate_samples(state, sample_rng, config.dataset_size)
+            plot_samples(config, samples, dataset, config.work_dir)
 
 
 if __name__ == "__main__":

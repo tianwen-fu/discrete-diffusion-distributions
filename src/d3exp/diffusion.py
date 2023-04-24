@@ -27,11 +27,14 @@ class CategoricalDiffusion(metaclass=abc.ABCMeta):
         self.num_timesteps = config.num_timesteps
         self.eps = config.eps
         self.hybrid_coeff = config.hybrid_coeff
-        self.transition = get_transition(config)
-        beta_schedule = get_beta_schedule(config)
 
         # Following the D3PM code, we enforce float64 for beta schedules and the q matrices for better precision
         with jax_float64_context():
+            if config.transition_type == "random_double_stochastic":
+                self.transition = get_transition(config, rng=jrnd.PRNGKey(config.seed))
+            else:
+                self.transition = get_transition(config)
+            beta_schedule = get_beta_schedule(config)
             self.betas = beta_schedule.get_betas(config.num_timesteps)
             q_one_step_matrices = [
                 self.transition._get_transition_matrix(t, self.betas[t])

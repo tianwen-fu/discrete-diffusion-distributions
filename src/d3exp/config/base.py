@@ -36,3 +36,7 @@ class Config:
     dataset_size: int
     n_modes: int
     data_tau: float
+
+    def update(self, d: Dict[str, Any]) -> None:
+        for k, v in d.items():
+            setattr(self, k, v)
