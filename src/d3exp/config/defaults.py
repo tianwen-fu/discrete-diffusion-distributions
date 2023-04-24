@@ -73,8 +73,8 @@ random_double_stochastic_default.update(
     dict(
         transition_type="random_double_stochastic",
         transition_kwargs=dict(beta_max=6),
-        beta_schedule_type="linear",
-        beta_schedule_kwargs=dict(beta_start=1.0, beta_end=5.5),
+        beta_schedule_type="step",
+        beta_schedule_kwargs=dict(step_values=list(range(1, 6))),
     )
 )
 

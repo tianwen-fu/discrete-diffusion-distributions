@@ -11,6 +11,7 @@ import flax.struct
 import jax
 import jax.numpy as jnp
 import jax.random as jrnd
+import numpy as np
 import optax
 from flax.metrics import tensorboard
 
@@ -178,4 +179,14 @@ class Trainer:
                                 "Train/StepsPerSec", steps_per_sec, step=state.step
                             )
 
-        return state
+        # final evaluation
+        eval_metrics = {}
+        for batch in self.dataloader:
+            rng, step_rng = jrnd.split(rng)
+            loss_value, metrics = self.model.loss_fn(state.params, batch, step_rng)
+            metrics["loss"] = loss_value
+            for k, v in metrics.items():
+                eval_metrics.setdefault(k, []).append(v)
+        eval_metrics = {k: np.mean(v) for k, v in eval_metrics.items()}
+
+        return state, eval_metrics

@@ -41,6 +41,7 @@ def main():
 
     kl_metrics_sd = {}
     kl_metrics_ds = {}
+    eval_metrics = {}
     for configset_name in args.configs:
         config_set = get_configs(configset_name)
         for config_name, config in config_set.items():
@@ -64,7 +65,7 @@ def main():
                 shuffle=True,
             )
             trainer = Trainer(config, dataloader, logging.getLogger("trainer"))
-            state = trainer.train()
+            state, metrics = trainer.train()
             rng, sample_rng = jrnd.split(rng)
             samples = np.asarray(
                 trainer.generate_samples(state, sample_rng, config.dataset_size)
@@ -87,6 +88,9 @@ def main():
             kl_metrics_ds[configset_name + "/" + config_name] = empirical_kl(
                 config, dataset.data, samples
             )
+            eval_metrics[configset_name + "/" + config_name] = {
+                key: np.asarray(value) for key, value in metrics.items()
+            }
 
     logging.info(
         f"KL divergences D(samples || dataset): {pprint.pformat(kl_metrics_sd)}"
@@ -94,6 +98,7 @@ def main():
     logging.info(
         f"KL divergences D(dataset || samples): {pprint.pformat(kl_metrics_ds)}"
     )
+    logging.info(f"Metrics: {pprint.pformat(eval_metrics)}")
 
 
 if __name__ == "__main__":

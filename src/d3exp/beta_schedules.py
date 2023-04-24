@@ -1,4 +1,5 @@
 import abc
+from typing import List
 
 import jax.numpy as jnp
 
@@ -22,7 +23,9 @@ class LinearBetaSchedule(BetaSchedule):
         self.beta_end = beta_end
 
     def get_betas(self, num_steps: int) -> jnp.ndarray:
-        return jnp.linspace(self.beta_start, self.beta_end, num_steps)
+        return jnp.linspace(
+            self.beta_start, self.beta_end, num_steps, dtype=jnp.float64
+        )
 
 
 class CosineBetaSchedule(BetaSchedule):
@@ -38,8 +41,24 @@ class JSDBetaSchedule(BetaSchedule):
         return 1 / jnp.linspace(num_steps, 1, num_steps, dtype=jnp.float64)
 
 
+class StepBetaSchedule(BetaSchedule):
+    def __init__(self, step_values: List[float]):
+        self.num_steps = len(step_values)
+        self.step_values = jnp.array(step_values, dtype=jnp.float64)
+
+    def get_betas(self, num_steps: int) -> jnp.ndarray:
+        selected_steps = jnp.linspace(
+            0, self.num_steps, endpoint=False, num=num_steps
+        ).astype(jnp.int32)
+        betas = self.step_values[selected_steps]
+        return betas
+
+
 BETA_SCHEDULE_CLASSES = dict(
-    linear=LinearBetaSchedule, cosine=CosineBetaSchedule, jsd=JSDBetaSchedule
+    linear=LinearBetaSchedule,
+    cosine=CosineBetaSchedule,
+    jsd=JSDBetaSchedule,
+    step=StepBetaSchedule,
 )
 
 
