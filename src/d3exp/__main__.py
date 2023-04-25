@@ -1,5 +1,6 @@
 import logging
 import os
+import pickle
 import pprint
 from argparse import ArgumentParser
 from copy import deepcopy
@@ -35,20 +36,22 @@ def main():
             "results",
             datetime.now().strftime("%Y%m%d-%H%M%S"),
         )
-    os.makedirs(work_dir, exist_ok=True)
-    logging.basicConfig(level=logging.INFO, filename=os.path.join(work_dir, "log.txt"))
-    logging.getLogger().addHandler(logging.StreamHandler())
+    logging.basicConfig(level=logging.INFO)
 
-    kl_metrics_sd = {}
-    kl_metrics_ds = {}
-    eval_metrics = {}
     for configset_name in args.configs:
+        eval_metrics = {}
+        logger = logging.getLogger(configset_name)
+        current_work_dir = os.path.join(work_dir, configset_name)
+        os.makedirs(current_work_dir, exist_ok=True)
+        logger.addHandler(
+            logging.FileHandler(os.path.join(current_work_dir, "log.txt"))
+        )
         config_set = get_configs(configset_name)
         for config_name, config in config_set.items():
-            logging.info(f"Running config {configset_name}/{config_name}")
+            logger.info(f"Running config {configset_name}/{config_name}")
             config = deepcopy(config)
             config.seed = args.seed
-            config.work_dir = os.path.join(work_dir, configset_name, config_name)
+            config.work_dir = os.path.join(current_work_dir, config_name)
             os.makedirs(config.work_dir, exist_ok=True)
 
             rng, data_rng = jrnd.split(rng)
@@ -64,7 +67,7 @@ def main():
                 key=data_rng,
                 shuffle=True,
             )
-            trainer = Trainer(config, dataloader, logging.getLogger("trainer"))
+            trainer = Trainer(config, dataloader, logger)
             state, metrics = trainer.train()
             rng, sample_rng = jrnd.split(rng)
             samples = np.asarray(
@@ -82,23 +85,18 @@ def main():
                 samples=samples.reshape(-1),
                 dataset=dataset.data.reshape(-1),
             )
-            kl_metrics_sd[configset_name + "/" + config_name] = empirical_kl(
-                config, samples, dataset.data
-            )
-            kl_metrics_ds[configset_name + "/" + config_name] = empirical_kl(
-                config, dataset.data, samples
-            )
             eval_metrics[configset_name + "/" + config_name] = {
                 key: np.asarray(value) for key, value in metrics.items()
             }
-
-    logging.info(
-        f"KL divergences D(samples || dataset): {pprint.pformat(kl_metrics_sd)}"
-    )
-    logging.info(
-        f"KL divergences D(dataset || samples): {pprint.pformat(kl_metrics_ds)}"
-    )
-    logging.info(f"Metrics: {pprint.pformat(eval_metrics)}")
+            eval_metrics[configset_name + "/" + config_name].update(
+                dict(
+                    kl_samples_dataset=empirical_kl(config, samples, dataset.data),
+                    kl_dataset_samples=empirical_kl(config, dataset.data, samples),
+                )
+            )
+        logger.info(f"Metrics: {pprint.pformat(eval_metrics)}")
+        with open(os.path.join(current_work_dir, "metrics.pkl"), "wb") as f:
+            pickle.dump(eval_metrics, f)
 
 
 if __name__ == "__main__":
