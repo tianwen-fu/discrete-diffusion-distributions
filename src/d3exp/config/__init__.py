@@ -4,7 +4,7 @@ from .absorbing_center import *
 from .base import Config
 from .defaults import *
 from .doubly_stochastic_beta_schedules import *
-from .gaussian_beta_schedules import *
+from .gaussian_and_uniform_beta_schedules import *
 from .over_peakiness import *
 
 NAMED_CONFIGS = {
@@ -19,7 +19,7 @@ NAMED_CONFIGS = {
     "DOUBLY_STOCHASTIC_BETAS": doubly_stochastic_beta_schedules,
     "ABSORBING_CENTER_M1": absorbing_center_M1,
     "ABSORBING_CENTER_M5": absorbing_center_M5,
-    "GAUSSIAN_BETAS": gaussian_beta_schedules,
+    "BETA_SCHEDULES": beta_schedules,
 }
 
 
